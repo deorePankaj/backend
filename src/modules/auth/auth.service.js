@@ -18,37 +18,48 @@ const createError = (message, statusCode) => {
   return error;
 };
 
-export const registerUser = async ({ name, email, password, role }) => {
-  if (!name || !email || !password) {
-    throw createError("Name, email, and password are required", 400);
+export const registerUser = async ({ firstName, lastName, emailId, password, role, mobileNumber }) => {
+  if (!firstName || !emailId || !password || !mobileNumber) {
+    throw createError("First name, email, password, and mobile number are required", 400);
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const existingUser = await prisma.user.findUnique({ where: { email:emailId } });
 
   if (existingUser) {
     throw createError("Email is already registered", 409);
   }
 
+  const existingUserWithMobileNumber = await prisma.user.findUnique({ where: { mobileNumber} });
+
+  if (existingUserWithMobileNumber) {
+    throw createError("Mobile number is already registered", 409);
+  }
+  
+
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: {
-      name,
-      email,
+      firstName,
+      lastName,
+      email: emailId,
       password: hashedPassword,
       ...(role ? { role } : {}),
+      mobileNumber,
     },
     select: {
       id: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       email: true,
       role: true,
+      mobileNumber: true,
       isActive: true,
       createdAt: true,
     },
   });
 
   return {
-    token: createToken(user),
+    //token: createToken(user),
     user,
   };
 };
@@ -74,10 +85,12 @@ export const loginUser = async ({ email, password }) => {
     token: createToken(user),
     user: {
       id: user.id,
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       role: user.role,
       isActive: user.isActive,
+      mobileNumber: user.mobileNumber,
     },
   };
 };

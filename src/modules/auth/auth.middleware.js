@@ -9,7 +9,7 @@ export const authenticateUser = async (req, res, next) => {
     const token = authHeader?.startsWith("Bearer ")
       ? authHeader.split(" ")[1]
       : null;
-
+      
     if (!token) {
       return res.status(401).json({ message: "Access token is required" });
     }
@@ -19,7 +19,8 @@ export const authenticateUser = async (req, res, next) => {
       where: { id: decoded.id },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         email: true,
         role: true,
         isActive: true,

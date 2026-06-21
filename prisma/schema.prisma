@@ -5,6 +5,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -24,10 +25,60 @@ model User {
   firstName String
   lastName  String
   email     String   @unique
+  mobileNumber String? @unique
   password  String
   role      UserRole @default(Client)
   isActive  Boolean  @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum ClientType {
+  Individual
+  Company
+  Developer
+  Government
+}
+
+enum Designation {
+  Director
+  Owner 
+  Manager
+}
+
+enum ClientCategory {
+  Residential
+  Commercial
+  Industrial
+  Institutional
+}
+
+model Client {
+  id                Int        	@id @default(autoincrement())
+  userId            Int?      
+
+  clientType        ClientType 	
+  clientCategory    ClientCategory? 
+
+  companyName       String?    
+
+  contactPersonName String?   
+  designation       Designation?
+
+  countryCode       String?    
+
+  whatsappNumber    String?    
+  whatsappVerified  Boolean    @default(false)
+
+  alternatePhone    String?    
+  website           String?
+
+  gstNumber         String?    
+  panNumber         String?    
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@map("clients")
 }
