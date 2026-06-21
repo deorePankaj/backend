@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -13,18 +14,31 @@ export const createClient = async (requestBody) => {
     const existingClient = await prisma.user.findUnique({ where: { email: requestBody.emailId } });
 
     if (existingClient) {
-        throw createError("Client with this Email is already registered", 409);
+        throw createError(`Client with this Email: ${requestBody.emailId} is already registered`, 409);
     }
 
     const existingClientWithMobileNumber = await prisma.user.findUnique({ where: { mobileNumber: requestBody.mobileNumber } });
 
     if (existingClientWithMobileNumber) {
-        throw createError("Client with this Mobile number is already registered", 409);
+        throw createError(`Client with this Mobile number: ${requestBody.mobileNumber} is already registered`, 409);
     }
+
+    const hashedPassword = await bcrypt.hash(requestBody.password ? requestBody.password : requestBody.emailId, 10);
+    
+    const user = await prisma.user.create({
+        data: {
+            firstName: requestBody.firstName,
+            lastName: requestBody.lastName,
+            email: requestBody.emailId,
+            password: hashedPassword,
+            ...(requestBody.role ? { role: requestBody.role } : { role: "Client" }),
+            mobileNumber: requestBody.mobileNumber,
+        },
+    });
 
     const client = await prisma.client.create({
         data: {
-            userId: 1234,
+            userId: user.id,
             clientType: requestBody.clientType,
             companyName: requestBody.companyName,
             contactPersonName: requestBody.contactPersonName,

@@ -30,7 +30,14 @@ const createClientSchema = Joi.object({
         })
         .messages({
             "string.uri": "Please enter a valid website URL",
-        })
+        }),
+    companyName: Joi.string().min(2).max(100),
+    contactPersonName: Joi.string().min(2).max(100),
+    clientCategory: Joi.string().min(2).max(100),
+    designation: Joi.string().min(2).max(100),
+    whatsappVerified: Joi.boolean().default(false),
+    gstNumber: Joi.string().min(2).max(100),
+    panNumber: Joi.string().min(2).max(100),
 });
 
 export { createClientSchema };

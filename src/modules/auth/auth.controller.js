@@ -1,4 +1,4 @@
-import { loginUser, registerUser } from "./auth.service.js";
+import { loginUser, registerUser, requestPasswordReset, resetUserPassword } from "./auth.service.js";
 
 export const register = async (req, res) => {
   try {
@@ -38,8 +38,40 @@ export const logout = (req, res) => {
   return res.json({ message: "Logout successful" });
 };
 
+export const forgotPassword = async (req, res) => {
+  try {
+    const { token } = await requestPasswordReset(req.body.email);
+
+    return res.json({
+      message: "Password reset token generated",
+      token,
+    });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: "Failed to generate reset token",
+      error: error.message,
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    await resetUserPassword(token, password);
+
+    return res.json({ message: "Password reset successful" });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: "Password reset failed",
+      error: error.message,
+    });
+  }
+};
+
 export default {
   register,
   login,
   logout,
+  forgotPassword,
+  resetPassword,
 };

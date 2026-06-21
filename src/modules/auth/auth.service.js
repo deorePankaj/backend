@@ -5,97 +5,137 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const createToken = (user) => {
-  return jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
-  );
+    return jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+    );
 };
 
 const createError = (message, statusCode) => {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
+    const error = new Error(message);
+    error.statusCode = statusCode;
+    return error;
 };
 
 export const registerUser = async ({ firstName, lastName, emailId, password, role, mobileNumber }) => {
-  if (!firstName || !emailId || !password || !mobileNumber) {
-    throw createError("First name, email, password, and mobile number are required", 400);
-  }
+    if (!firstName || !emailId || !password || !mobileNumber) {
+        throw createError("First name, email, password, and mobile number are required", 400);
+    }
 
-  const existingUser = await prisma.user.findUnique({ where: { email:emailId } });
+    const existingUser = await prisma.user.findUnique({ where: { email: emailId } });
 
-  if (existingUser) {
-    throw createError("Email is already registered", 409);
-  }
+    if (existingUser) {
+        throw createError("Email is already registered", 409);
+    }
 
-  const existingUserWithMobileNumber = await prisma.user.findUnique({ where: { mobileNumber} });
+    const existingUserWithMobileNumber = await prisma.user.findUnique({ where: { mobileNumber } });
 
-  if (existingUserWithMobileNumber) {
-    throw createError("Mobile number is already registered", 409);
-  }
-  
+    if (existingUserWithMobileNumber) {
+        throw createError("Mobile number is already registered", 409);
+    }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: {
-      firstName,
-      lastName,
-      email: emailId,
-      password: hashedPassword,
-      ...(role ? { role } : {}),
-      mobileNumber,
-    },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      role: true,
-      mobileNumber: true,
-      isActive: true,
-      createdAt: true,
-    },
-  });
 
-  return {
-    //token: createToken(user),
-    user,
-  };
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+        data: {
+            firstName,
+            lastName,
+            email: emailId,
+            password: hashedPassword,
+            ...(role ? { role } : {}),
+            mobileNumber,
+        },
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+            mobileNumber: true,
+            isActive: true,
+            createdAt: true,
+        },
+    });
+
+    return {
+        //token: createToken(user),
+        user,
+    };
 };
 
 export const loginUser = async ({ email, password }) => {
-  if (!email || !password) {
-    throw createError("Email and password are required", 400);
-  }
+    if (!email || !password) {
+        throw createError("Email and password are required", 400);
+    }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user || !user.isActive) {
-    throw createError("Invalid email or password", 401);
-  }
+    if (!user || !user.isActive) {
+        throw createError("Invalid email or password", 401);
+    }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-  if (!isPasswordValid) {
-    throw createError("Invalid email or password", 401);
-  }
+    if (!isPasswordValid) {
+        throw createError("Invalid email or password", 401);
+    }
 
-  return {
-    token: createToken(user),
-    user: {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      isActive: user.isActive,
-      mobileNumber: user.mobileNumber,
-    },
-  };
+    return {
+        token: createToken(user),
+        user: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            isActive: user.isActive,
+            mobileNumber: user.mobileNumber,
+        },
+    };
+};
+
+export const requestPasswordReset = async (email) => {
+    if (!email) {
+        throw createError("Email is required", 400);
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+        throw createError("User not found", 404);
+    }
+
+    const token = jwt.sign({ id: user.id, action: "reset" }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+    });
+
+    return { token };
+};
+
+export const resetUserPassword = async (token, newPassword) => {
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        if (decoded.action !== "reset") {
+            throw createError("Invalid reset token", 400);
+        }
+
+        const userId = decoded.id;
+        const hashed = await bcrypt.hash(newPassword, 10);
+
+        await prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+    } catch (err) {
+        if (err.name === "TokenExpiredError") {
+            throw createError("Reset token expired", 400);
+        }
+        throw createError(err.message || "Invalid token", 400);
+    }
 };
 
 export default {
-  registerUser,
-  loginUser,
+    registerUser,
+    loginUser,
+    requestPasswordReset,
+    resetUserPassword,
 };
