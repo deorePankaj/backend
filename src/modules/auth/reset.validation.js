@@ -9,7 +9,7 @@ export const resetSchema = Joi.object({
   password: Joi.string()
     .min(8)
     .max(20)
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$/)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/)
     .required()
     .messages({
       "string.empty": "Password is required",
