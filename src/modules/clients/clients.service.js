@@ -148,8 +148,8 @@ export const deleteClient = async (id) => {
     }
 
     // Soft delete by marking as inactive
-    const deletedClient = await prisma.client.update({
-        where: { id: parseInt(id) },
+    const deletedClient = await prisma.user.update({
+        where: { id: parseInt(client.userId) },
         data: { isActive: false },
     });
 
