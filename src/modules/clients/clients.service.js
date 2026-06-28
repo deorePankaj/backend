@@ -62,6 +62,17 @@ export const getAllClients = async (skip = 0, take = 10) => {
         skip: parseInt(skip),
         take: parseInt(take),
         orderBy: { createdAt: "desc" },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                    mobileNumber: true,
+                },
+            }
+        },
     });
 
     const total = await prisma.client.count();
@@ -84,10 +95,6 @@ export const getClientById = async (id) => {
     });
 
     if (!client) {
-        throw createError("Client not found", 404);
-    }
-
-    if (!client.isActive) {
         throw createError("Client not found", 404);
     }
 

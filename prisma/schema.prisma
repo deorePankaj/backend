@@ -32,6 +32,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  clients      Client[]
 }
 
 enum ClientType {
@@ -56,8 +58,8 @@ enum ClientCategory {
 
 model Client {
   id                Int        	@id @default(autoincrement())
-  userId            Int?      
-
+  user              User?       @relation(fields: [id], references: [id])
+    
   clientType        ClientType 	
   clientCategory    ClientCategory? 
 
