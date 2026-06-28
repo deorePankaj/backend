@@ -92,6 +92,17 @@ export const getClientById = async (id) => {
 
     const client = await prisma.client.findUnique({
         where: { id: parseInt(id) },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                    mobileNumber: true,
+                },
+            }
+        },
     });
 
     if (!client) {
