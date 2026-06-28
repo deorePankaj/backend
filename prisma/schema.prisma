@@ -58,7 +58,9 @@ enum ClientCategory {
 
 model Client {
   id                Int        	@id @default(autoincrement())
-  user              User?       @relation(fields: [id], references: [id])
+  userId            Int
+
+  user              User     @relation(fields: [userId], references: [id])
     
   clientType        ClientType 	
   clientCategory    ClientCategory? 
